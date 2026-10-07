@@ -23,7 +23,7 @@ test("published package has a valid small PNG icon and stable identity", () => {
   const readme = readFileSync(join(root, "README.md"), "utf8");
   const icon = readFileSync(join(root, manifest.icon));
   assert.equal(manifest.id, "kino-deportes");
-  assert.equal(manifest.version, "0.1.2");
+  assert.equal(manifest.version, "0.1.3");
   assert.equal(manifest.author, "CRONOS");
   assert.equal(
     manifest.homepage,
@@ -162,6 +162,22 @@ test("agenda waits for a real detail link instead of a footer link", async () =>
   const events = await plugin.__testing.loadAgenda("tennis");
   assert.equal(events.length, 1);
   assert.equal(events[0].title, "Grenada vs Cuba");
+});
+
+test("agenda keeps the approved RBTV base after WebView redirects to a mirror", async () => {
+  const fake = fakeKino({ body: "<html><body><div id=app></div></body></html>" });
+  fake.kino.browser = {
+    page: async () => ({
+      html: renderedAgenda,
+      finalUrl: "https://lola59.example-mirror.invalid/es/football.html",
+      status: 200,
+      truncated: false,
+    }),
+  };
+  const events = await plugin.__testing.loadAgenda("football");
+  assert.equal(events.length, 1);
+  assert.equal(events[0].title, "Grenada vs Cuba");
+  assert.equal(new URL(events[0].sourcePage).hostname, "www.rbtvplus18.beer");
 });
 
 test("agenda update ignores an empty cache written by the broken selector", async () => {

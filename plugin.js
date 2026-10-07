@@ -11,7 +11,7 @@ const SOURCE_ORIGINS = new Set([
 
 const DEFAULT_SOURCE = "https://www.rbtvplus18.casa/es";
 const AGENDA_TTL_MS = 5 * 60 * 1000;
-const AGENDA_CACHE_VERSION = "v2";
+const AGENDA_CACHE_VERSION = "v3";
 const PAGE_SIZE = 50;
 
 const CATEGORIES = [
@@ -210,7 +210,9 @@ async function loadAgenda(category, { force = false } = {}) {
           timeoutMs: 12000,
           waitFor: "match-list[\\s\\S]*href=[\"']/es/[^/\"']+/[^/\"']+/[^/\"']+\\.html",
         });
-        events = parseAgendaHtml(rendered.html, selected[0], rendered.finalUrl || finalPageUrl);
+        const renderedBaseUrl = normalizeSourceUrl(rendered.finalUrl, finalPageUrl)
+          || finalPageUrl;
+        events = parseAgendaHtml(rendered.html, selected[0], renderedBaseUrl);
       } catch {
         // A rendered page is only a fallback; an empty fetched agenda remains valid.
       }
