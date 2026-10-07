@@ -21,7 +21,7 @@
   ],
   "capabilities": ["home", "browse", "resolve"],
   "categories": ["live"],
-  "discoverable": true,
+  "discoverable": false,
   "browser": "pages",
   "streamHosts": "any",
   "section": { "label": "Deportes" },
