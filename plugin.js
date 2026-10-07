@@ -162,7 +162,7 @@ function toKinoItem(event) {
     ref: event.ref,
     title: event.title,
     originalTitle: event.league || undefined,
-    kind: "live",
+    kind: "movie",
     poster: event.homeLogo || event.awayLogo || undefined,
     badges: event.startTime ? [event.startTime] : undefined,
   };

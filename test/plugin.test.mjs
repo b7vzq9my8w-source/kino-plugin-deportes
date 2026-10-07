@@ -23,7 +23,7 @@ test("published package has a valid small PNG icon and stable identity", () => {
   const readme = readFileSync(join(root, "README.md"), "utf8");
   const icon = readFileSync(join(root, manifest.icon));
   assert.equal(manifest.id, "kino-deportes");
-  assert.equal(manifest.version, "0.1.4");
+  assert.equal(manifest.version, "0.1.5");
   assert.equal(manifest.author, "CRONOS");
   assert.equal(
     manifest.homepage,
@@ -119,14 +119,14 @@ function fakeKino({ body = agenda, fail = false } = {}) {
   return { kino: api, values, fetches: () => fetches };
 }
 
-test("section reuses agenda cache and returns native live cards", async () => {
+test("section reuses agenda cache and returns playable section cards", async () => {
   const fake = fakeKino();
   const first = await plugin.section({ tab: "live" });
   const second = await plugin.section({ tab: "live" });
   assert.equal(fake.fetches(), 1);
   assert.equal(first.tab, "live");
   assert.ok(first.tabs.some((tab) => tab.id === "football"));
-  assert.equal(first.rows[0].items[0].kind, "live");
+  assert.equal(first.rows[0].items[0].kind, "movie");
   assert.deepEqual(second, first);
 });
 
