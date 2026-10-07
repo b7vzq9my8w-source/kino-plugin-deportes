@@ -1,0 +1,8 @@
+{
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test test/plugin.test.mjs",
+    "validate": "node sdk/validate.mjs ."
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "id": "kino-deportes",
+  "name": "Kino Deportes",
+  "version": "0.1.0",
+  "apiVersion": 6,
+  "entry": "plugin.js",
+  "icon": "icon.png",
+  "description": "Agenda deportiva y transmisiones en vivo adaptadas a la interfaz de Kino para Android TV.",
+  "author": "CRONOS",
+  "homepage": "https://github.com/b7vzq9my8w-source/kino-plugin-deportes",
+  "hosts": [
+    "rbtvplus17.lat",
+    "www.rbtvplus17.lat",
+    "rbtvplus18.buzz",
+    "www.rbtvplus18.buzz",
+    "rbtvplus18.beer",
+    "www.rbtvplus18.beer",
+    "rbtvplus18.casa",
+    "www.rbtvplus18.casa"
+  ],
+  "capabilities": ["home", "browse", "resolve"],
+  "categories": ["live"],
+  "discoverable": true,
+  "browser": "pages",
+  "streamHosts": "any",
+  "section": { "label": "Deportes" },
+  "theme": {
+    "accent": "#B33A3A",
+    "onAccent": "#FFFFFF",
+    "background": "#080808",
+    "surface": "#181818",
+    "highlight": "#FFFFFF"
+  },
+  "settings": [
+    {
+      "key": "agenda",
+      "label": "Agenda",
+      "type": "section",
+      "hint": "La agenda se guarda brevemente para que cargue rápido en televisores."
+    },
+    {
+      "key": "refreshAgenda",
+      "label": "Actualizar agenda",
+      "type": "action"
+    }
+  ],
+  "color": "#B33A3A"
+}
