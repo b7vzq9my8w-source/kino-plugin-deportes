@@ -8,6 +8,10 @@ import { validate } from "../sdk/validate.mjs";
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const plugin = await import(pathToFileURL(join(root, "plugin.js")).href + `?v=${Date.now()}`);
 const agenda = readFileSync(join(root, "test/fixtures/agenda.html"), "utf8");
+const renderedAgenda = readFileSync(
+  join(root, "test/fixtures/agenda-rendered.html"),
+  "utf8",
+);
 
 test("Kino accepts the Deportes manifest and required exports", async () => {
   const result = await validate(root);
@@ -19,7 +23,7 @@ test("published package has a valid small PNG icon and stable identity", () => {
   const readme = readFileSync(join(root, "README.md"), "utf8");
   const icon = readFileSync(join(root, manifest.icon));
   assert.equal(manifest.id, "kino-deportes");
-  assert.equal(manifest.version, "0.1.0");
+  assert.equal(manifest.version, "0.1.1");
   assert.equal(manifest.author, "CRONOS");
   assert.equal(
     manifest.homepage,
@@ -68,6 +72,21 @@ test("agenda parser rejects unsafe entries, deduplicates and keeps stable ids", 
   assert.equal(first[0].homeName, "Boston Red Sox");
   assert.equal(first[0].awayName, "Chicago Cubs");
   assert.equal(first[0].homeLogo, "https://static.example.org/red-sox.png");
+});
+
+test("agenda parser supports the current rendered RBTV match markup", () => {
+  const [event] = plugin.__testing.parseAgendaHtml(
+    renderedAgenda,
+    "football",
+    "https://www.rbtvplus18.casa/es",
+  );
+  assert.equal(event.title, "Grenada vs Cuba");
+  assert.equal(event.league, "Concacaf Nations League");
+  assert.equal(event.startTime, "16:00");
+  assert.equal(event.homeName, "Grenada");
+  assert.equal(event.awayName, "Cuba");
+  assert.equal(event.homeLogo, "https://logos1.tcllu137fien.ru/team/grenada.png");
+  assert.equal(event.awayLogo, "https://logos1.tcllu137fien.ru/team/cuba.png");
 });
 
 function fakeKino({ body = agenda, fail = false } = {}) {

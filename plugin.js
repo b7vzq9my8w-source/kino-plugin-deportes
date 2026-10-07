@@ -59,7 +59,7 @@ function stableId(url) {
 }
 
 function imageData(block) {
-  return [...String(block).matchAll(/<img\b([^>]*)>/gi)].slice(0, 2).map((match) => {
+  const images = [...String(block).matchAll(/<img\b([^>]*)>/gi)].map((match) => {
     const attrs = match[1];
     const src = (attrs.match(/\bsrc=(?:"([^"]+)"|'([^']+)')/i) || [])
       .slice(1)
@@ -76,6 +76,45 @@ function imageData(block) {
     }
     return { name: text(alt), logo };
   });
+  const teamImages = images.filter(({ logo }) => {
+    if (!logo) return false;
+    const url = new URL(logo);
+    return url.hostname.startsWith("logos") || /\/(?:team|club)\//i.test(url.pathname);
+  });
+  return (teamImages.length >= 2 ? teamImages : images.filter(({ logo }) => logo)).slice(0, 2);
+}
+
+function humanizeSlug(value) {
+  let decoded;
+  try {
+    decoded = decodeURIComponent(String(value || ""));
+  } catch {
+    decoded = String(value || "");
+  }
+  return decoded
+    .replace(/-\d+$/i, "")
+    .split("-")
+    .filter(Boolean)
+    .map((part) => part.toLowerCase() === "vs"
+      ? "vs"
+      : `${part.charAt(0).toUpperCase()}${part.slice(1)}`)
+    .join(" ");
+}
+
+function eventPathData(sourcePage) {
+  const segments = new URL(sourcePage).pathname.split("/").filter(Boolean);
+  const filename = segments[segments.length - 1] || "";
+  if (segments.length < 4 || !filename.endsWith(".html")) return null;
+  const eventSlug = filename.slice(0, -".html".length);
+  const teams = eventSlug.split(/-vs-/i);
+  return {
+    title: teams.length === 2
+      ? `${humanizeSlug(teams[0])} vs ${humanizeSlug(teams[1])}`
+      : humanizeSlug(eventSlug),
+    league: humanizeSlug(segments[segments.length - 2]),
+    homeName: teams.length === 2 ? humanizeSlug(teams[0]) : undefined,
+    awayName: teams.length === 2 ? humanizeSlug(teams[1]) : undefined,
+  };
 }
 
 function parseAgendaHtml(html, category, baseUrl = DEFAULT_SOURCE) {
@@ -90,19 +129,24 @@ function parseAgendaHtml(html, category, baseUrl = DEFAULT_SOURCE) {
       .find(Boolean);
     const sourcePage = normalizeSourceUrl(href, baseUrl);
     if (!sourcePage || seen.has(sourcePage)) continue;
-    const title = text((block.match(/<strong\b[^>]*>([\s\S]*?)<\/strong>/i) || [])[1]);
+    const pathData = eventPathData(sourcePage);
+    const title = text((block.match(/<strong\b[^>]*>([\s\S]*?)<\/strong>/i) || [])[1])
+      || (pathData && pathData.title);
     if (!title) continue;
     const [home = {}, away = {}] = imageData(block);
+    const startTime = text((block.match(/<time\b[^>]*>([\s\S]*?)<\/time>/i) || [])[1])
+      || ((text(block).match(/\b(?:[01]?\d|2[0-3]):[0-5]\d\b/) || [])[0] || "");
     seen.add(sourcePage);
     events.push({
       id: stableId(sourcePage),
       ref: `event:${sourcePage}`,
       category,
       title,
-      league: text((block.match(/class="league"[^>]*>([\s\S]*?)<\//i) || [])[1]),
-      startTime: text((block.match(/<time\b[^>]*>([\s\S]*?)<\/time>/i) || [])[1]),
-      homeName: home.name || undefined,
-      awayName: away.name || undefined,
+      league: text((block.match(/class="league"[^>]*>([\s\S]*?)<\//i) || [])[1])
+        || (pathData && pathData.league) || "",
+      startTime,
+      homeName: home.name || (pathData && pathData.homeName) || undefined,
+      awayName: away.name || (pathData && pathData.awayName) || undefined,
       homeLogo: home.logo,
       awayLogo: away.logo,
       sourcePage,
