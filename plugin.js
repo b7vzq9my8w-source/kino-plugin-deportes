@@ -19,3 +19,7 @@ export async function section() {
     rows: []
   };
 }
+
+export async function action() {
+  return { message: "Este plugin ha sido retirado por su autor" };
+}

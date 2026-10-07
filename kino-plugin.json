@@ -1,7 +1,7 @@
 {
   "id": "kino-deportes",
   "name": "Kino Deportes",
-  "version": "0.1.9",
+  "version": "0.1.10",
   "apiVersion": 6,
   "entry": "plugin.js",
   "icon": "icon.png",
