@@ -12,6 +12,16 @@ const renderedAgenda = readFileSync(
   join(root, "test/fixtures/agenda-rendered.html"),
   "utf8",
 );
+const liveAgenda = `
+  <a href="/es/football/test-league-1/alpha-vs-beta.html">
+    <span>18:30</span>
+    <img src="https://statics.example/icon_live_stream_active.webp">
+    <span class="ADVrU5">2</span><span class="_1xh4DS">73'</span><span class="ADVrU5">1</span>
+  </a>
+  <a href="/es/football/test-league-2/gamma-vs-delta.html">
+    <span>20:00</span><div class="C+B5Ub">VS</div>
+  </a>
+`;
 
 test("Kino accepts the Deportes manifest and required exports", async () => {
   const result = await validate(root);
@@ -23,7 +33,7 @@ test("published package has a valid small PNG icon and stable identity", () => {
   const readme = readFileSync(join(root, "README.md"), "utf8");
   const icon = readFileSync(join(root, manifest.icon));
   assert.equal(manifest.id, "kino-deportes");
-  assert.equal(manifest.version, "0.1.5");
+  assert.equal(manifest.version, "0.1.6");
   assert.equal(manifest.author, "CRONOS");
   assert.equal(
     manifest.homepage,
@@ -87,6 +97,32 @@ test("agenda parser supports the current rendered RBTV match markup", () => {
   assert.equal(event.awayName, "Cuba");
   assert.equal(event.homeLogo, "https://logos1.tcllu137fien.ru/team/grenada.png");
   assert.equal(event.awayLogo, "https://logos1.tcllu137fien.ru/team/cuba.png");
+});
+
+test("live agenda keeps only active signals and exposes score and match minute", async () => {
+  const fake = fakeKino({ body: liveAgenda });
+  const events = await plugin.__testing.loadAgenda("live");
+  assert.equal(events.length, 1);
+  assert.equal(events[0].isLive, true);
+  assert.equal(events[0].homeScore, "2");
+  assert.equal(events[0].awayScore, "1");
+  assert.equal(events[0].liveClock, "73'");
+});
+
+test("TV card title always shows VS, schedule or live score", () => {
+  const [live, scheduled] = plugin.__testing.parseAgendaHtml(
+    liveAgenda,
+    "football",
+    "https://www.rbtvplus18.casa/es",
+  );
+  assert.equal(
+    plugin.__testing.toKinoItem(live).title,
+    "🔴 EN VIVO · Alpha 2–1 Beta · 73'",
+  );
+  assert.equal(
+    plugin.__testing.toKinoItem(scheduled).title,
+    "20:00 · Gamma VS Delta",
+  );
 });
 
 function fakeKino({ body = agenda, fail = false } = {}) {

@@ -11,7 +11,7 @@ const SOURCE_ORIGINS = new Set([
 
 const DEFAULT_SOURCE = "https://www.rbtvplus18.casa/es";
 const AGENDA_TTL_MS = 5 * 60 * 1000;
-const AGENDA_CACHE_VERSION = "v4";
+const AGENDA_CACHE_VERSION = "v5";
 const PAGE_SIZE = 50;
 
 const CATEGORIES = [
@@ -137,6 +137,14 @@ function parseAgendaHtml(html, category, baseUrl = DEFAULT_SOURCE) {
     const [home = {}, away = {}] = imageData(block);
     const startTime = text((block.match(/<time\b[^>]*>([\s\S]*?)<\/time>/i) || [])[1])
       || ((text(block).match(/\b(?:[01]?\d|2[0-3]):[0-5]\d\b/) || [])[0] || "");
+    const scoreValues = [...block.matchAll(
+      /class=["'][^"']*\bADVrU5\b[^"']*["'][^>]*>\s*([^<]*)/gi,
+    )].map((match) => text(match[1])).filter(Boolean);
+    const liveClock = text((block.match(
+      /class=["'][^"']*\b_1xh4DS\b[^"']*["'][^>]*>\s*([^<]*)/i,
+    ) || [])[1]);
+    const isLive = /icon_live_stream_active\.webp/i.test(block)
+      || scoreValues.length >= 2;
     seen.add(sourcePage);
     events.push({
       id: stableId(sourcePage),
@@ -150,6 +158,10 @@ function parseAgendaHtml(html, category, baseUrl = DEFAULT_SOURCE) {
       awayName: away.name || (pathData && pathData.awayName) || undefined,
       homeLogo: home.logo,
       awayLogo: away.logo,
+      isLive,
+      homeScore: scoreValues.length >= 2 ? scoreValues[0] : undefined,
+      awayScore: scoreValues.length >= 2 ? scoreValues[1] : undefined,
+      liveClock: liveClock || undefined,
       sourcePage,
     });
   }
@@ -157,14 +169,29 @@ function parseAgendaHtml(html, category, baseUrl = DEFAULT_SOURCE) {
 }
 
 function toKinoItem(event) {
+  const teams = event.homeName && event.awayName
+    ? event.isLive && event.homeScore !== undefined && event.awayScore !== undefined
+      ? `${event.homeName} ${event.homeScore}–${event.awayScore} ${event.awayName}`
+      : `${event.homeName} VS ${event.awayName}`
+    : event.title.replace(/\s+vs\s+/i, " VS ");
+  const title = event.isLive
+    ? `🔴 EN VIVO · ${teams}${event.liveClock ? ` · ${event.liveClock}` : ""}`
+    : `${event.startTime ? `${event.startTime} · ` : ""}${teams}`;
+  const badges = [
+    event.isLive ? "EN VIVO" : event.startTime,
+    event.homeScore !== undefined && event.awayScore !== undefined
+      ? `${event.homeScore}–${event.awayScore}`
+      : undefined,
+    event.liveClock,
+  ].filter(Boolean);
   return {
     id: event.id,
     ref: event.ref,
-    title: event.title,
+    title,
     originalTitle: event.league || undefined,
     kind: "movie",
     poster: event.homeLogo || event.awayLogo || undefined,
-    badges: event.startTime ? [event.startTime] : undefined,
+    badges: badges.length ? badges : undefined,
   };
 }
 
@@ -227,6 +254,9 @@ async function loadAgenda(category, { force = false } = {}) {
         }
         // A rendered page is only a fallback; an empty fetched agenda remains valid.
       }
+    }
+    if (selected[0] === "live") {
+      events = events.filter((event) => event.isLive);
     }
     const serialized = JSON.stringify(events);
     kino.storage.set(freshKey, serialized, { ttlMs: AGENDA_TTL_MS });
