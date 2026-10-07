@@ -11,7 +11,7 @@ const SOURCE_ORIGINS = new Set([
 
 const DEFAULT_SOURCE = "https://www.rbtvplus18.casa/es";
 const AGENDA_TTL_MS = 5 * 60 * 1000;
-const AGENDA_CACHE_VERSION = "v3";
+const AGENDA_CACHE_VERSION = "v4";
 const PAGE_SIZE = 50;
 
 const CATEGORIES = [
@@ -213,7 +213,18 @@ async function loadAgenda(category, { force = false } = {}) {
         const renderedBaseUrl = normalizeSourceUrl(rendered.finalUrl, finalPageUrl)
           || finalPageUrl;
         events = parseAgendaHtml(rendered.html, selected[0], renderedBaseUrl);
-      } catch {
+        if (typeof kino.log === "function") {
+          const detailLinks = (String(rendered.html).match(
+            /href=["'][^"']*\/es\/[^/"']+\/[^/"']+\/[^/"']+\.html/gi,
+          ) || []).length;
+          kino.log(
+            `agenda ${selected[0]}: ${events.length} eventos, ${detailLinks} enlaces, ${String(rendered.html).length} caracteres`,
+          );
+        }
+      } catch (error) {
+        if (typeof kino.log === "function") {
+          kino.log(`agenda ${selected[0]} falló: ${error && error.message ? error.message : error}`);
+        }
         // A rendered page is only a fallback; an empty fetched agenda remains valid.
       }
     }

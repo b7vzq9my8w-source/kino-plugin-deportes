@@ -23,7 +23,7 @@ test("published package has a valid small PNG icon and stable identity", () => {
   const readme = readFileSync(join(root, "README.md"), "utf8");
   const icon = readFileSync(join(root, manifest.icon));
   assert.equal(manifest.id, "kino-deportes");
-  assert.equal(manifest.version, "0.1.3");
+  assert.equal(manifest.version, "0.1.4");
   assert.equal(manifest.author, "CRONOS");
   assert.equal(
     manifest.homepage,
