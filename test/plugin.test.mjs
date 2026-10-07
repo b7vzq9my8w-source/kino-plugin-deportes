@@ -33,7 +33,7 @@ test("published package has a valid small PNG icon and stable identity", () => {
   const readme = readFileSync(join(root, "README.md"), "utf8");
   const icon = readFileSync(join(root, manifest.icon));
   assert.equal(manifest.id, "kino-deportes");
-  assert.equal(manifest.version, "0.1.6");
+  assert.equal(manifest.version, "0.1.7");
   assert.equal(manifest.author, "CRONOS");
   assert.equal(
     manifest.homepage,
@@ -229,6 +229,15 @@ test("agenda update ignores an empty cache written by the broken selector", asyn
     }),
   };
   const events = await plugin.__testing.loadAgenda("tennis");
+  assert.equal(events.length, 1);
+  assert.equal(fake.fetches(), 1);
+});
+
+test("current agenda ignores an empty fresh cache and retries RBTV", async () => {
+  const fake = fakeKino({ body: liveAgenda });
+  fake.values.set("agenda:live:v5:fresh", "[]");
+  fake.values.set("agenda:live:v5:last", "[]");
+  const events = await plugin.__testing.loadAgenda("live");
   assert.equal(events.length, 1);
   assert.equal(fake.fetches(), 1);
 });

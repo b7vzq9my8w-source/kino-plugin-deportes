@@ -204,7 +204,7 @@ function readEvents(key) {
   if (!saved) return null;
   try {
     const value = JSON.parse(saved);
-    return Array.isArray(value) ? value : null;
+    return Array.isArray(value) && value.length ? value : null;
   } catch {
     kino.storage.remove(key);
     return null;
