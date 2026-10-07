@@ -23,7 +23,7 @@ test("published package has a valid small PNG icon and stable identity", () => {
   const readme = readFileSync(join(root, "README.md"), "utf8");
   const icon = readFileSync(join(root, manifest.icon));
   assert.equal(manifest.id, "kino-deportes");
-  assert.equal(manifest.version, "0.1.1");
+  assert.equal(manifest.version, "0.1.2");
   assert.equal(manifest.author, "CRONOS");
   assert.equal(
     manifest.homepage,
@@ -144,6 +144,41 @@ test("agenda uses one bounded rendered-page fallback when the fetched HTML is em
   assert.equal(pages.length, 1);
   assert.equal(pages[0].options.timeoutMs, 12000);
   assert.match(pages[0].options.waitFor, /match-list/);
+});
+
+test("agenda waits for a real detail link instead of a footer link", async () => {
+  const fake = fakeKino({ body: "<html><body><div id=app></div></body></html>" });
+  const prematureHtml = `
+    <div class="match-list"></div>
+    <footer><a href="/es/about-us.html">Acerca de</a></footer>
+  `;
+  fake.kino.browser = {
+    page: async (url, options) => {
+      const ready = new RegExp(options.waitFor, "i");
+      const html = ready.test(prematureHtml) ? prematureHtml : renderedAgenda;
+      return { html, finalUrl: url, status: 200, truncated: false };
+    },
+  };
+  const events = await plugin.__testing.loadAgenda("tennis");
+  assert.equal(events.length, 1);
+  assert.equal(events[0].title, "Grenada vs Cuba");
+});
+
+test("agenda update ignores an empty cache written by the broken selector", async () => {
+  const fake = fakeKino({ body: "<html><body><div id=app></div></body></html>" });
+  fake.values.set("agenda:tennis:fresh", "[]");
+  fake.values.set("agenda:tennis:last", "[]");
+  fake.kino.browser = {
+    page: async (url) => ({
+      html: renderedAgenda,
+      finalUrl: url,
+      status: 200,
+      truncated: false,
+    }),
+  };
+  const events = await plugin.__testing.loadAgenda("tennis");
+  assert.equal(events.length, 1);
+  assert.equal(fake.fetches(), 1);
 });
 
 test("section stays within eight tabs and exposes hockey and combat under more sports", async () => {

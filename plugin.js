@@ -11,6 +11,7 @@ const SOURCE_ORIGINS = new Set([
 
 const DEFAULT_SOURCE = "https://www.rbtvplus18.casa/es";
 const AGENDA_TTL_MS = 5 * 60 * 1000;
+const AGENDA_CACHE_VERSION = "v2";
 const PAGE_SIZE = 50;
 
 const CATEGORIES = [
@@ -185,8 +186,8 @@ function readEvents(key) {
 
 async function loadAgenda(category, { force = false } = {}) {
   const selected = categoryById(category);
-  const freshKey = `agenda:${selected[0]}:fresh`;
-  const lastKey = `agenda:${selected[0]}:last`;
+  const freshKey = `agenda:${selected[0]}:${AGENDA_CACHE_VERSION}:fresh`;
+  const lastKey = `agenda:${selected[0]}:${AGENDA_CACHE_VERSION}:last`;
   if (!force) {
     const cached = readEvents(freshKey);
     if (cached) return cached;
@@ -207,7 +208,7 @@ async function loadAgenda(category, { force = false } = {}) {
       try {
         const rendered = await kino.browser.page(pageUrl, {
           timeoutMs: 12000,
-          waitFor: "match-list[\\s\\S]*<a[^>]+href=",
+          waitFor: "match-list[\\s\\S]*href=[\"']/es/[^/\"']+/[^/\"']+/[^/\"']+\\.html",
         });
         events = parseAgendaHtml(rendered.html, selected[0], rendered.finalUrl || finalPageUrl);
       } catch {
