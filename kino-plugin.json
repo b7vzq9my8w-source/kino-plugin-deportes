@@ -1,7 +1,7 @@
 {
   "id": "kino-deportes",
   "name": "Kino Deportes",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "apiVersion": 6,
   "entry": "plugin.js",
   "icon": "icon.png",
@@ -16,7 +16,8 @@
     "rbtvplus18.beer",
     "www.rbtvplus18.beer",
     "rbtvplus18.casa",
-    "www.rbtvplus18.casa"
+    "www.rbtvplus18.casa",
+    "mimi01eo.fut0newsiryroquite.cfd"
   ],
   "capabilities": ["home", "browse", "resolve"],
   "categories": ["live"],

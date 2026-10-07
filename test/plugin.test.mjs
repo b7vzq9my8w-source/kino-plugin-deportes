@@ -33,7 +33,7 @@ test("published package has a valid small PNG icon and stable identity", () => {
   const readme = readFileSync(join(root, "README.md"), "utf8");
   const icon = readFileSync(join(root, manifest.icon));
   assert.equal(manifest.id, "kino-deportes");
-  assert.equal(manifest.version, "0.1.7");
+  assert.equal(manifest.version, "0.1.8");
   assert.equal(manifest.author, "CRONOS");
   assert.equal(
     manifest.homepage,
@@ -311,7 +311,26 @@ test("resolve rejects a ref outside approved HTTPS sources before fetch", async 
   assert.equal(called, false);
 });
 
-test("resolve captures only after no direct stream is found", async () => {
+test("RBTV player URL uses the site's sport type for every exposed category", () => {
+  const playerUrl = plugin.__testing.playerUrlForEvent;
+  const cases = [
+    ["football", 1, "NDUxNTc5N18x"],
+    ["baseball", 4, "NDUxNTc5N180"],
+    ["american-football", 9, "NDUxNTc5N185"],
+    ["hockey", 11, "NDUxNTc5N18xMQ"],
+    ["fighting", 14, "NDUxNTc5N18xNA"],
+  ];
+  for (const [sport, sportType, mdata] of cases) {
+    const url = `https://www.rbtvplus18.casa/es/${sport}/league-4515797/a-vs-b.html`;
+    assert.equal(
+      playerUrl(url),
+      `https://mimi01eo.fut0newsiryroquite.cfd/es/player.html?mdata=${mdata}&ilang=es`,
+      `sport type ${sportType} for ${sport}`,
+    );
+  }
+});
+
+test("resolve opens the RBTV player directly after no static stream is found", async () => {
   const html = readFileSync(join(root, "test/fixtures/event-embed.html"), "utf8");
   const calls = [];
   globalThis.kino = {
@@ -323,8 +342,8 @@ test("resolve captures only after no direct stream is found", async () => {
       text: () => html,
     }),
     browser: {
-      capture: async (url) => {
-        calls.push(url);
+      capture: async (url, options) => {
+        calls.push({ url, options });
         return {
           media: [{
             url: "https://edge.example/live.m3u8",
@@ -342,10 +361,17 @@ test("resolve captures only after no direct stream is found", async () => {
     ),
   };
   const stream = await plugin.resolve(
-    "event:https://www.rbtvplus18.beer/es/football/game.html",
+    "event:https://www.rbtvplus18.beer/es/football/international-friendly-4515797/guatemala-u16-vs-honduras-u16.html",
   );
   assert.equal(calls.length, 1);
-  assert.equal(calls[0], "https://www.rbtvplus18.beer/es/football/game.html");
+  assert.equal(
+    calls[0].url,
+    "https://mimi01eo.fut0newsiryroquite.cfd/es/player.html?mdata=NDUxNTc5N18x&ilang=es",
+  );
+  assert.equal(
+    calls[0].options.headers.Referer,
+    "https://www.rbtvplus18.beer/es/football/international-friendly-4515797/guatemala-u16-vs-honduras-u16.html",
+  );
   assert.equal(stream.headers.Cookie, "session=ok");
 });
 

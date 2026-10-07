@@ -10,6 +10,7 @@ const SOURCE_ORIGINS = new Set([
 ]);
 
 const DEFAULT_SOURCE = "https://www.rbtvplus18.casa/es";
+const PLAYER_ORIGIN = "https://mimi01eo.fut0newsiryroquite.cfd";
 const AGENDA_TTL_MS = 5 * 60 * 1000;
 const AGENDA_CACHE_VERSION = "v5";
 const PAGE_SIZE = 50;
@@ -30,6 +31,44 @@ const SECTION_TABS = [
   ...CATEGORIES.slice(0, 7).map(([id, label]) => ({ id, label })),
   { id: "more", label: "Más deportes" },
 ];
+
+const SPORT_TYPES = {
+  football: 1,
+  basketball: 2,
+  tennis: 3,
+  baseball: 4,
+  "american-football": 9,
+  hockey: 11,
+  motorsport: 7,
+  fighting: 14,
+};
+
+function base64Ascii(value) {
+  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+  let result = "";
+  for (let index = 0; index < value.length; index += 3) {
+    const first = value.charCodeAt(index);
+    const second = value.charCodeAt(index + 1);
+    const third = value.charCodeAt(index + 2);
+    const bits = (first << 16)
+      | ((Number.isNaN(second) ? 0 : second) << 8)
+      | (Number.isNaN(third) ? 0 : third);
+    result += alphabet[(bits >> 18) & 63];
+    result += alphabet[(bits >> 12) & 63];
+    result += Number.isNaN(second) ? "=" : alphabet[(bits >> 6) & 63];
+    result += Number.isNaN(third) ? "=" : alphabet[bits & 63];
+  }
+  return result;
+}
+
+function playerUrlForEvent(pageUrl) {
+  const segments = new URL(pageUrl).pathname.split("/").filter(Boolean);
+  const sportType = SPORT_TYPES[segments[1]];
+  const matchId = (segments[2] || "").match(/-(\d+)$/)?.[1];
+  if (!sportType || !matchId) return null;
+  const mdata = base64Ascii(`${matchId}_${sportType}`).replace(/=+$/, "");
+  return `${PLAYER_ORIGIN}/es/player.html?mdata=${mdata}&ilang=es`;
+}
 
 function normalizeSourceUrl(raw, base = DEFAULT_SOURCE) {
   try {
@@ -316,9 +355,10 @@ function extractDirectStreams(html, pageUrl) {
   return unique.sort((left, right) => priority[left.mime] - priority[right.mime]);
 }
 
-async function captureStream(pageUrl) {
+async function captureStream(pageUrl, headers) {
   const page = await kino.browser.capture(pageUrl, {
     timeoutMs: 15000,
+    ...(headers ? { headers } : {}),
     match: "(?:\\.m3u8|\\.mpd|\\.mp4)(?:\\?|$)",
     autoplay: true,
   });
@@ -372,7 +412,8 @@ export async function resolve(ref) {
   const streams = extractDirectStreams(response.text(), pageUrl);
   if (!streams.length) {
     try {
-      return await captureStream(pageUrl);
+      const playerUrl = playerUrlForEvent(pageUrl);
+      return await captureStream(playerUrl || pageUrl, playerUrl ? { Referer: pageUrl } : undefined);
     } catch (error) {
       if (["blocked", "timeout", "busy", "browser_unavailable"].includes(error && error.code)) {
         throw kino.error(
@@ -432,4 +473,5 @@ export const __testing = {
   toKinoItem,
   loadAgenda,
   extractDirectStreams,
+  playerUrlForEvent,
 };
