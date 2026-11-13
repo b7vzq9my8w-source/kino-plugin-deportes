@@ -7,9 +7,11 @@ const SOURCE_ORIGINS = new Set([
   "https://www.rbtvplus18.beer",
   "https://rbtvplus18.casa",
   "https://www.rbtvplus18.casa",
+  "https://rbtvplus18.ink",
+  "https://www.rbtvplus18.ink",
 ]);
 
-const DEFAULT_SOURCE = "https://www.rbtvplus18.casa/es";
+const DEFAULT_SOURCE = "https://www.rbtvplus18.ink/es";
 const PLAYER_ORIGIN = "https://mimi01eo.fut0newsiryroquite.cfd";
 const AGENDA_TTL_MS = 5 * 60 * 1000;
 const AGENDA_CACHE_VERSION = "v5";
